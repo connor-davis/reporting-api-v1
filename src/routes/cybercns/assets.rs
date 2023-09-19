@@ -13,11 +13,6 @@ use crate::{
 };
 
 pub async fn index(State(pool): State<PgPool>) -> impl IntoResponse {
-    let assets: Vec<CyberAsset> = sqlx::query_as!(CyberAsset, "SELECT * FROM cybercns_assets;")
-        .fetch_all(&pool)
-        .await
-        .expect("Failed to get rocketcyber agents from postgres.");
-
     #[derive(Debug, Deserialize, Serialize)]
     struct FullCyberAsset {
         pub id: String,
@@ -26,73 +21,76 @@ pub async fn index(State(pool): State<PgPool>) -> impl IntoResponse {
         pub company: Option<CyberCompanyRef>,
     }
 
-    let mut full_assets: Vec<FullCyberAsset> = Vec::new();
+    let full_assets = sqlx::query!(
+        r#"
+        SELECT
+            a.id AS asset_id,
+            h.host_name AS host_name,
+            sr.id AS security_report_card_id,
+            sr.anti_virus AS anti_virus,
+            sr.local_firewall AS local_firewall,
+            sr.insecure_listening_ports AS insecure_listening_ports,
+            sr.failed_login AS failed_login,
+            sr.network_vulnerabilities AS network_vulnerabilities,
+            sr.system_aging AS system_aging,
+            sr.supported_os AS supported_os,
+            sr.backup_softwares AS backup_softwares,
+            sre.anti_virus AS evidence_anti_virus,
+            sre.local_firewall AS evidence_local_firewall,
+            sre.insecure_listening_ports AS evidence_insecure_listening_ports,
+            sre.failed_login AS evidence_failed_login,
+            sre.network_vulnerabilities AS evidence_network_vulnerabilities,
+            sre.system_aging AS evidence_system_aging,
+            sre.supported_os AS evidence_supported_os,
+            sre.backup_softwares AS evidence_backup_softwares,
+            c.id AS company_id,
+            c.name AS company_name
+        FROM cybercns_assets AS a
+        LEFT JOIN cybercns_hosts AS h ON a.host = h.id
+        LEFT JOIN cybercns_security_report_card AS sr ON a.security_report_card = sr.id
+        LEFT JOIN cybercns_security_report_card_evidence AS sre ON sr.evidence = sre.id
+        LEFT JOIN cybercns_companies AS c ON a.company = c.id
+        "#
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("Failed to get data from postgres.");
 
-    for asset in assets {
-        let host_record = sqlx::query!("SELECT * FROM cybercns_hosts WHERE id = $1", asset.host)
-            .fetch_one(&pool)
-            .await
-            .expect("Failed to find cybercns host from postgres.");
-
-        let security_report_card_record = sqlx::query!(
-            "SELECT * FROM cybercns_security_report_card WHERE id = $1",
-            asset.security_report_card
-        )
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to find cybercns security report card from postgres.");
-
-        let security_report_card_evidence_record = sqlx::query!(
-            "SELECT * FROM cybercns_security_report_card_evidence WHERE id = $1",
-            security_report_card_record.evidence as i32
-        )
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to find cybercns security report card evidence from postgres.");
-
-        let company_record = sqlx::query!(
-            "SELECT * FROM cybercns_companies WHERE id = $1",
-            asset.company
-        )
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to find cybercns company from postgres.");
-
-        full_assets.push(FullCyberAsset {
-            id: asset.id,
+    let result: Vec<FullCyberAsset> = full_assets
+        .into_iter()
+        .map(|row| FullCyberAsset {
+            id: row.asset_id,
             host: Some(CyberHost {
-                host_name: host_record.host_name,
+                host_name: row.host_name,
             }),
             security_report_card: Some(CyberSecurityReportCard {
-                anti_virus: security_report_card_record.anti_virus,
-                local_firewall: security_report_card_record.local_firewall,
-                insecure_listening_ports: security_report_card_record.insecure_listening_ports,
-                failed_login: security_report_card_record.failed_login,
-                network_vulnerabilities: security_report_card_record.network_vulnerabilities,
-                system_aging: security_report_card_record.system_aging,
-                supported_os: security_report_card_record.supported_os,
-                backup_softwares: security_report_card_record.backup_softwares,
+                anti_virus: row.anti_virus,
+                local_firewall: row.local_firewall,
+                insecure_listening_ports: row.insecure_listening_ports,
+                failed_login: row.failed_login,
+                network_vulnerabilities: row.network_vulnerabilities,
+                system_aging: row.system_aging,
+                supported_os: row.supported_os,
+                backup_softwares: row.backup_softwares,
                 evidence: Some(CyberSecurityReportCardEvidence {
-                    anti_virus: security_report_card_evidence_record.anti_virus,
-                    local_firewall: security_report_card_evidence_record.local_firewall,
-                    insecure_listening_ports: security_report_card_evidence_record
-                        .insecure_listening_ports,
-                    failed_login: security_report_card_evidence_record.failed_login,
-                    network_vulnerabilities: security_report_card_evidence_record
-                        .network_vulnerabilities,
-                    system_aging: security_report_card_evidence_record.system_aging,
-                    supported_os: security_report_card_evidence_record.supported_os,
-                    backup_softwares: security_report_card_evidence_record.backup_softwares,
+                    anti_virus: row.evidence_anti_virus,
+                    local_firewall: row.evidence_local_firewall,
+                    insecure_listening_ports: row.evidence_insecure_listening_ports,
+                    failed_login: row.evidence_failed_login,
+                    network_vulnerabilities: row.evidence_network_vulnerabilities,
+                    system_aging: row.evidence_system_aging,
+                    supported_os: row.evidence_supported_os,
+                    backup_softwares: row.evidence_backup_softwares,
                 }),
             }),
             company: Some(CyberCompanyRef {
-                id: Some(company_record.id),
-                name: Some(company_record.name),
+                id: row.company_id,
+                name: row.company_name,
             }),
         })
-    }
+        .collect();
 
-    Json(full_assets)
+    Json(result)
 }
 
 pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
