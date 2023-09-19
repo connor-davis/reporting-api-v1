@@ -5,7 +5,7 @@ use dotenv::dotenv;
 use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use super::rocketcyber;
+use super::{cybercns, rocketcyber};
 
 pub async fn router() -> Router {
     dotenv().ok();
@@ -22,6 +22,18 @@ pub async fn router() -> Router {
 
     Router::new()
         .route("/", get(index))
+        .nest(
+            "/cyber-cns",
+            Router::new()
+                .route(
+                    "/agents",
+                    get(cybercns::agents::index).post(cybercns::agents::import),
+                )
+                .route(
+                    "/assets",
+                    get(cybercns::assets::index).post(cybercns::assets::import),
+                ),
+        )
         .nest(
             "/rocket-cyber",
             Router::new()
