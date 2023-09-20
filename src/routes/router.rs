@@ -5,7 +5,7 @@ use dotenv::dotenv;
 use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use super::{cybercns, rocketcyber};
+use super::{cybercns, rocketcyber, vsa};
 
 pub async fn router() -> Router {
     dotenv().ok();
@@ -22,6 +22,19 @@ pub async fn router() -> Router {
 
     Router::new()
         .route("/", get(index))
+        .nest(
+            "/vsa",
+            Router::new()
+                .route("/agents", get(vsa::agents::index).post(vsa::agents::import))
+                .route(
+                    "/security-products",
+                    get(vsa::security_products::index).post(vsa::security_products::import),
+                )
+                .route(
+                    "/devices",
+                    get(vsa::devices::index).post(vsa::devices::import),
+                ),
+        )
         .nest(
             "/cyber-cns",
             Router::new()
