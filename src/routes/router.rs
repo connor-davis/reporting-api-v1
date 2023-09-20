@@ -33,7 +33,8 @@ pub async fn router() -> Router {
                 .route(
                     "/devices",
                     get(vsa::devices::index).post(vsa::devices::import),
-                ),
+                )
+                .route("/disks", get(vsa::disks::index).post(vsa::disks::import)),
         )
         .nest(
             "/cyber-cns",
