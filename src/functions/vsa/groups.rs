@@ -18,22 +18,20 @@ pub struct VsaAuthResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all(deserialize = "PascalCase", serialize = "PascalCase"))]
-pub struct VsaDisk {
-    pub agent_id: Option<String>,
-    pub free_space_in_gbytes: Option<f64>,
-    pub used_space_in_gbytes: Option<f64>,
-    pub total_size_in_gbytes: Option<f64>,
+pub struct VsaGroup {
+    pub reverse_group_id: Option<String>,
+    pub organization_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct VsaDisksResponse {
-    pub value: Vec<VsaDisk>,
+pub struct VsaGroupsResponse {
+    pub value: Vec<VsaGroup>,
 }
 
 /**
-Fetch the disks data from Kaseya VSA using the reqwest HTTP Client crate.
+Fetch the groups data from Kaseya VSA using the reqwest HTTP Client crate.
 */
-pub async fn disks() -> Vec<VsaDisk> {
+pub async fn groups() -> Vec<VsaGroup> {
     dotenv().ok();
 
     let username = env::var("VSA_USERNAME").ok().unwrap();
@@ -59,16 +57,16 @@ pub async fn disks() -> Vec<VsaDisk> {
     let api_token = &auth_body.result.unwrap().api_token.unwrap();
 
     let response = client
-        .get("https://vsa.thusa.co.za/api/odata/1.0/Disks")
+        .get("https://vsa.thusa.co.za/api/odata/1.0/MachineGroups")
         .bearer_auth(api_token)
         .send()
         .await
-        .expect("Failed to retrieve Kaseya VSA disks data.");
+        .expect("Failed to retrieve Kaseya VSA groups data.");
 
     let body = response
-        .json::<VsaDisksResponse>()
+        .json::<VsaGroupsResponse>()
         .await
-        .expect("Failed to retrieve Kaseya VSA disks data.");
+        .expect("Failed to retrieve Kaseya VSA groups data.");
 
     body.value
 }

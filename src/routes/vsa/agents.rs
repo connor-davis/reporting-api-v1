@@ -49,6 +49,8 @@ pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
                     free_space_in_gbytes: agent.free_space_in_gbytes,
                     used_space_in_gbytes: agent.used_space_in_gbytes,
                     total_size_in_gbytes: agent.total_size_in_gbytes,
+                    group_id: agent.machine_group,
+                    organization_name: agent.organization_name,
                 });
 
                 inserted += 1;
@@ -57,13 +59,14 @@ pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
     }
 
     let mut query_builder =
-        QueryBuilder::new("INSERT INTO vsa_agents (id, agent_name, computer_name, ip_address) ");
+        QueryBuilder::new("INSERT INTO vsa_agents (id, agent_name, computer_name, ip_address, group_id) ");
 
     query_builder.push_values(new_agents, |mut b, new_agent| {
         b.push_bind(new_agent.id)
             .push_bind(new_agent.agent_name)
             .push_bind(new_agent.computer_name)
-            .push_bind(new_agent.ip_address);
+            .push_bind(new_agent.ip_address)
+            .push_bind(new_agent.group_id);
     });
 
     let query = query_builder.build();

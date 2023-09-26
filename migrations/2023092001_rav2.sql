@@ -79,9 +79,11 @@ CREATE TABLE IF NOT EXISTS vsa_agents (
     agent_name TEXT,
     computer_name TEXT,
     ip_address TEXT,
-    anti_virus BOOLEAN DEFAULT false,
     system_serial_number TEXT,
     system_age TEXT,
+    group_id TEXT,
+    organization_name TEXT,
+    anti_virus BOOLEAN DEFAULT false,
     free_space_in_gbytes DOUBLE PRECISION DEFAULT 0.0,
     used_space_in_gbytes DOUBLE PRECISION DEFAULT 0.0,
     total_size_in_gbytes DOUBLE PRECISION DEFAULT 0.0

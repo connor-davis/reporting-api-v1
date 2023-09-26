@@ -38,6 +38,8 @@ pub struct VsaAgent {
     pub free_space_in_gbytes: Option<f64>,
     pub used_space_in_gbytes: Option<f64>,
     pub total_size_in_gbytes: Option<f64>,
+    pub machine_group: Option<String>,
+    pub organization_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -121,6 +123,8 @@ async fn agents_paged(api_token: &String, vsa_agents_count: u64) -> Result<Vec<V
         let body = response.json::<VsaAgentsResponse>().await?;
 
         let body_agents = body.result.unwrap();
+
+        println!("{:?}", body_agents);
 
         for agent in body_agents {
             new_agents.push(agent)
