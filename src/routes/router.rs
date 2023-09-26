@@ -52,6 +52,10 @@ pub async fn router() -> Router {
             "/rocket-cyber",
             Router::new()
                 .route(
+                    "/accounts",
+                    get(rocketcyber::accounts::index).post(rocketcyber::accounts::import),
+                )
+                .route(
                     "/agents",
                     get(rocketcyber::agents::index).post(rocketcyber::agents::import),
                 )

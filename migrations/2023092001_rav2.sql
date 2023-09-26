@@ -45,6 +45,14 @@ CREATE TABLE IF NOT EXISTS cybercns_assets (
     company TEXT
 );
 
+CREATE TABLE rocketcyber_accounts (
+    id SERIAL PRIMARY KEY NOT NULL,
+    account_id BIGINT NOT NULL,
+    account_name TEXT NOT NULL,
+    account_path TEXT NOT NULL,
+    status TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS rocketcyber_agents (
     id TEXT PRIMARY KEY NOT NULL,
     customer_id BIGINT NOT NULL,
