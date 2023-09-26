@@ -5,6 +5,7 @@ use sqlx::PgPool;
 
 use crate::{functions::cybercns::agents::agents, models::cybercns::agent::CyberAgent};
 
+#[utoipa::path(get, path = "/cyber-cns/agents", responses((status = 200, description = "List all CyberCNS agents from api database.")), tag = "CyberCNS")]
 pub async fn index(State(pool): State<PgPool>) -> impl IntoResponse {
     let agents: Vec<CyberAgent> = sqlx::query_as!(CyberAgent, "SELECT * FROM cybercns_agents;")
         .fetch_all(&pool)
@@ -14,6 +15,7 @@ pub async fn index(State(pool): State<PgPool>) -> impl IntoResponse {
     Json(agents)
 }
 
+#[utoipa::path(post, path = "/cyber-cns/agents", responses((status = 200, description = "Import CyberCNS agents from the CyberCNS api.")), tag = "CyberCNS")]
 pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
     let agents = agents()
         .await
