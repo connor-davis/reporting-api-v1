@@ -14,4 +14,5 @@ pub struct VsaAgent {
     pub total_size_in_gbytes: Option<f64>,
     pub group_id: Option<String>,
     pub organization_name: Option<String>,
+    pub os_name: Option<String>,
 }

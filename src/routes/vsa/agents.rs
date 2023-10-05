@@ -1,7 +1,7 @@
 use axum::{extract::State, response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde_json::json;
-use sqlx::{PgPool, QueryBuilder};
+use sqlx::PgPool;
 
 use crate::{functions::vsa::agents::agents, models::vsa::agent::VsaAgent};
 
@@ -20,8 +20,6 @@ pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
     let mut inserted = 0;
     let mut skipped = 0;
 
-    let mut new_agents: Vec<VsaAgent> = Vec::new();
-
     for agent in agents {
         let agent_id = agent.agent_id;
 
@@ -38,43 +36,24 @@ pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
                 skipped += 1;
             }
             Err(_) => {
-                new_agents.push(VsaAgent {
-                    id: agent_id,
-                    agent_name: Some(agent.agent_name),
-                    computer_name: Some(agent.computer_name),
-                    ip_address: Some(agent.ip_address),
-                    anti_virus: agent.anti_virus,
-                    system_serial_number: agent.system_serial_number,
-                    system_age: agent.system_age,
-                    free_space_in_gbytes: agent.free_space_in_gbytes,
-                    used_space_in_gbytes: agent.used_space_in_gbytes,
-                    total_size_in_gbytes: agent.total_size_in_gbytes,
-                    group_id: agent.machine_group,
-                    organization_name: agent.organization_name,
-                });
+                sqlx::query_as!(
+                    VsaAgent,
+                    "INSERT INTO vsa_agents (id, agent_name, computer_name, ip_address, os_name, group_id) VALUES ($1, $2, $3, $4, $5, $6)",
+                    agent_id,
+                    agent.agent_name,
+                    agent.computer_name,
+                    agent.ip_address,
+                    agent.operating_system_info,
+                    agent.machine_group
+                )
+                .execute(&pool)
+                .await
+                .expect("Failed to insert agent into postgres database.");
 
                 inserted += 1;
             }
         }
     }
-
-    let mut query_builder =
-        QueryBuilder::new("INSERT INTO vsa_agents (id, agent_name, computer_name, ip_address, group_id) ");
-
-    query_builder.push_values(new_agents, |mut b, new_agent| {
-        b.push_bind(new_agent.id)
-            .push_bind(new_agent.agent_name)
-            .push_bind(new_agent.computer_name)
-            .push_bind(new_agent.ip_address)
-            .push_bind(new_agent.group_id);
-    });
-
-    let query = query_builder.build();
-
-    query
-        .execute(&pool)
-        .await
-        .expect("Failed to bulk insert new agents to postgres database.");
 
     Json(json!({
         "status": StatusCode::OK.as_u16(),
