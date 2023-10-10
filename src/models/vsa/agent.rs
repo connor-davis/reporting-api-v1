@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -15,4 +16,8 @@ pub struct VsaAgent {
     pub group_id: Option<String>,
     pub organization_name: Option<String>,
     pub os_name: Option<String>,
+    pub total_patches: Option<f64>,
+    pub installed_patches: Option<f64>,
+    pub last_patch: Option<DateTime<Utc>>,
+    pub next_patch: Option<DateTime<Utc>>,
 }

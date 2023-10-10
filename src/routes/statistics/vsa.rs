@@ -28,8 +28,6 @@ pub async fn index(
     let mut win10_agents_count = 0;
     let mut win7_agents_count = 0;
 
-    println!("{:?}", vsa_organizations_result);
-
     for record in vsa_organizations_result {
         let anti_virus = record.anti_virus.unwrap_or(false);
         let os_name = record.os_name.unwrap_or("Unknown".to_string());

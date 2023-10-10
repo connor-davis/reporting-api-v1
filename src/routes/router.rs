@@ -28,7 +28,9 @@ pub async fn router() -> Router {
         )
         .nest(
             "/statistics",
-            Router::new().route("/vsa", get(statistics::vsa::index)),
+            Router::new()
+                .route("/vsa", get(statistics::vsa::index))
+                .route("/vsa-patching", get(statistics::vsa_patching::index)),
         )
         .nest(
             "/table",
@@ -47,7 +49,11 @@ pub async fn router() -> Router {
                     get(vsa::devices::index).post(vsa::devices::import),
                 )
                 .route("/disks", get(vsa::disks::index).post(vsa::disks::import))
-                .route("/groups", get(vsa::groups::index).post(vsa::groups::import)),
+                .route("/groups", get(vsa::groups::index).post(vsa::groups::import))
+                .route(
+                    "/patches",
+                    get(vsa::patches::index).post(vsa::patches::import),
+                ),
         )
         .nest(
             "/cyber-cns",

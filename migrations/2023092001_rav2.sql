@@ -87,5 +87,9 @@ CREATE TABLE IF NOT EXISTS vsa_agents (
     os_name TEXT,
     free_space_in_gbytes DOUBLE PRECISION DEFAULT 0.0,
     used_space_in_gbytes DOUBLE PRECISION DEFAULT 0.0,
-    total_size_in_gbytes DOUBLE PRECISION DEFAULT 0.0
+    total_size_in_gbytes DOUBLE PRECISION DEFAULT 0.0,
+    total_patches DOUBLE PRECISION DEFAULT 0.0,
+    installed_patches DOUBLE PRECISION DEFAULT 0.0,
+    last_patch TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    next_patch TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
