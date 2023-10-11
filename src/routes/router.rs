@@ -34,7 +34,10 @@ pub async fn router() -> Router {
         )
         .nest(
             "/table",
-            Router::new().route("/vsa", get(table::vsa::index)),
+            Router::new()
+                .route("/vsa", get(table::vsa::index))
+                .route("/vsa/patching", get(table::vsa_patching::index))
+                .route("/cns", get(table::cns_assets::index)),
         )
         .nest(
             "/vsa",
