@@ -30,14 +30,16 @@ pub async fn router() -> Router {
             "/statistics",
             Router::new()
                 .route("/vsa", get(statistics::vsa::index))
-                .route("/vsa-patching", get(statistics::vsa_patching::index)),
+                .route("/vsa-patching", get(statistics::vsa_patching::index))
+                .route("/rocket-cyber", get(statistics::rocket_cyber::index)),
         )
         .nest(
             "/table",
             Router::new()
                 .route("/vsa", get(table::vsa::index))
                 .route("/vsa/patching", get(table::vsa_patching::index))
-                .route("/cns", get(table::cns_assets::index)),
+                .route("/cns", get(table::cns_assets::index))
+                .route("/rocket-cyber", get(table::rocket_cyber::index)),
         )
         .nest(
             "/vsa",
