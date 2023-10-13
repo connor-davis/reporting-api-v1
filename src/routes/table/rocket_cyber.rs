@@ -28,50 +28,59 @@ pub async fn index(
         tenant
     )
     .fetch_one(&pool)
-    .await
-    .expect("Failed to find rocket cyber account in postgres.");
+    .await;
 
-    let incidents_result = sqlx::query_as!(
-        RocketIncident,
-        r#"
-            SELECT
-                *
-            FROM rocketcyber_incidents AS incident
-            WHERE account_id = $1
-            ORDER BY incident.title OFFSET $2 LIMIT 10;
-        "#,
-        account.account_id,
-        offset
-    )
-    .fetch_all(&pool)
-    .await
-    .expect("Failed to get total results from postgres.");
+    match account {
+        Ok(account) => {
+            let incidents_result = sqlx::query_as!(
+                RocketIncident,
+                r#"
+                    SELECT
+                        *
+                    FROM rocketcyber_incidents AS incident
+                    WHERE account_id = $1
+                    ORDER BY incident.title OFFSET $2 LIMIT 10;
+                "#,
+                account.account_id,
+                offset
+            )
+            .fetch_all(&pool)
+            .await
+            .expect("Failed to get total results from postgres.");
 
-    println!("Incidents: {:?}", incidents_result);
+            println!("Incidents: {:?}", incidents_result);
 
-    let mut total_pages_result = sqlx::query_scalar!(
-        r#"
-            SELECT
-                COUNT(*)
-            FROM rocketcyber_incidents AS incident
-            WHERE account_id = $1
-        "#,
-        account.account_id
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Failed to get total results from postgres.");
+            let mut total_pages_result = sqlx::query_scalar!(
+                r#"
+                    SELECT
+                        COUNT(*)
+                    FROM rocketcyber_incidents AS incident
+                    WHERE account_id = $1
+                "#,
+                account.account_id
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("Failed to get total results from postgres.");
 
-    if total_pages_result.unwrap_or(10) < 10 {
-        total_pages_result = Some(10);
+            if total_pages_result.unwrap_or(10) < 10 {
+                total_pages_result = Some(10);
+            }
+
+            let total_pages = ceil(total_pages_result.unwrap_or(10) as f64 / 10 as f64, 0);
+
+            Json(json!({
+                "status": StatusCode::OK.as_u16(),
+                "tenant": tenant,
+                "results": incidents_result,
+                "total_pages": total_pages
+            }))
+        }
+        Err(_) => Json(json!({
+            "status": StatusCode::OK.as_u16(),
+            "tenant": tenant,
+            "results": [],
+            "total_pages": 0
+        })),
     }
-
-    let total_pages = ceil(total_pages_result.unwrap_or(10) as f64 / 10 as f64, 0);
-
-    Json(json!({
-        "status": StatusCode::OK.as_u16(),
-        "tenant": tenant,
-        "results": incidents_result,
-        "total_pages": total_pages
-    }))
 }
