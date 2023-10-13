@@ -26,39 +26,48 @@ pub async fn index(
         tenant
     )
     .fetch_one(&pool)
-    .await
-    .expect("Failed to find rocket cyber account in postgres.");
+    .await;
 
-    let total_agents = sqlx::query_scalar!(
-        r#"
-            SELECT
-                COUNT(*)
-            FROM rocketcyber_agents AS agent
-            WHERE customer_id = $1
-        "#,
-        account.account_id
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Failed to get total results from postgres.");
+    match account {
+        Ok(account) => {
+            let total_agents = sqlx::query_scalar!(
+                r#"
+                    SELECT
+                        COUNT(*)
+                    FROM rocketcyber_agents AS agent
+                    WHERE customer_id = $1
+                "#,
+                account.account_id
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("Failed to get total results from postgres.");
 
-    let total_incidents = sqlx::query_scalar!(
-        r#"
-            SELECT
-                COUNT(*)
-            FROM rocketcyber_incidents AS incident
-            WHERE account_id = $1
-        "#,
-        account.account_id
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Failed to get total results from postgres.");
+            let total_incidents = sqlx::query_scalar!(
+                r#"
+                    SELECT
+                        COUNT(*)
+                    FROM rocketcyber_incidents AS incident
+                    WHERE account_id = $1
+                "#,
+                account.account_id
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("Failed to get total results from postgres.");
 
-    Json(json!({
-        "status": StatusCode::OK.as_u16(),
-        "tenant": tenant,
-        "total_agents": total_agents,
-        "total_incidents": total_incidents
-    }))
+            Json(json!({
+                "status": StatusCode::OK.as_u16(),
+                "tenant": tenant,
+                "total_agents": total_agents,
+                "total_incidents": total_incidents
+            }))
+        }
+        Err(_) => Json(json!({
+            "status": StatusCode::OK.as_u16(),
+            "tenant": tenant,
+            "total_agents": 0,
+            "total_incidents": 0
+        })),
+    }
 }
