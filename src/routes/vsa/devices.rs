@@ -33,9 +33,12 @@ pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
             Ok(device_agent) => {
                 sqlx::query_as!(
                         VsaAgent,
-                        "UPDATE vsa_agents SET system_serial_number = $1, system_age = $2 WHERE id = $3",
+                        "UPDATE vsa_agents SET system_serial_number = $1, system_age = $2, cpu_speed = $3, cpu_count = $4, ram_size_in_mbytes = $5 WHERE id = $6",
                         device.system_serial_number.unwrap_or_else(|| "Unknown".to_string()),
                         device.bios_release_date.unwrap_or_else(|| "Unknown".to_string()),
+                        device.cpu_speed.unwrap_or_else(|| 0.0),
+                        device.cpu_count.unwrap_or_else(|| 0.0),
+                        device.ram_size_in_mbytes.unwrap_or_else(|| 0.0),
                         device_agent.id
                     )
                     .execute(&pool)

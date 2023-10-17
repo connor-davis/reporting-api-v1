@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use axum::Router;
+use axum::{Router, extract::DefaultBodyLimit};
 use dotenv::dotenv;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -31,6 +31,7 @@ async fn main() {
     let app = Router::new()
         .nest_service("/", router)
         .merge(SwaggerUi::new("/docs").url("/docs/openapi.json", ApiDoc::openapi()))
+        .layer(DefaultBodyLimit::max(100_000_000))
         .layer(CorsLayer::permissive())
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()));
 

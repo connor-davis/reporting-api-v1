@@ -22,6 +22,9 @@ pub struct VsaDevice {
     pub agent_id: Option<String>,
     pub system_serial_number: Option<String>,
     pub bios_release_date: Option<String>,
+    pub cpu_speed: Option<f64>,
+    pub cpu_count: Option<f64>,
+    pub ram_size_in_mbytes: Option<f64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

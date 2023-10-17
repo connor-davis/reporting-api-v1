@@ -1,11 +1,17 @@
 use std::time::Duration;
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
 use dotenv::dotenv;
 use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use super::{cybercns, rocketcyber, statistics, table, tenants, vsa};
+use super::{cybercns, logos, rocketcyber, statistics, table, tenants, vsa};
 
 pub async fn router() -> Router {
     dotenv().ok();
@@ -25,6 +31,13 @@ pub async fn router() -> Router {
         .nest(
             "/tenants",
             Router::new().route("/", get(tenants::find::all)),
+        )
+        .nest(
+            "/logos",
+            Router::new()
+                .route("/", get(logos::find::index))
+                .route("/view", get(logos::find::get_file))
+                .route("/upload", post(logos::upload::index)),
         )
         .nest(
             "/statistics",
