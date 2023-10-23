@@ -3,7 +3,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use math::round::ceil;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -18,7 +17,6 @@ pub async fn index(
     State(pool): State<PgPool>,
 ) -> impl IntoResponse {
     let tenant = &params[0].1;
-    let offset = (&params[1].1.parse::<i64>().unwrap_or(1) - 1) * 10;
 
     #[derive(Debug, Deserialize, Serialize)]
     struct FullCyberAsset {
@@ -57,12 +55,10 @@ pub async fn index(
             LEFT JOIN cybercns_security_report_card AS sr ON a.security_report_card = sr.id
             LEFT JOIN cybercns_security_report_card_evidence AS sre ON sr.evidence = sre.id
             LEFT JOIN cybercns_companies AS c ON a.company = c.id
-            WHERE LOWER(TRIM(TRAILING ' (Pty) Ltd' FROM c.name)) = LOWER($1)
-            ORDER BY h.host_name
-            OFFSET $2 LIMIT 10;
+            WHERE similarity(LOWER(c.name), LOWER($1)) >= 0.6
+            ORDER BY h.host_name;
         "#,
-        tenant,
-        offset
+        tenant
     )
     .fetch_all(&pool)
     .await
@@ -102,30 +98,9 @@ pub async fn index(
         })
         .collect();
 
-    let mut total_pages_result = sqlx::query_scalar!(
-        r#"
-            SELECT
-                COUNT(*)
-            FROM cybercns_assets AS a
-            LEFT JOIN cybercns_companies AS c ON a.company = c.id
-            WHERE LOWER(TRIM(TRAILING ' (Pty) Ltd' FROM c.name)) = LOWER($1)
-        "#,
-        tenant
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Failed to get total results from postgres.");
-
-    if total_pages_result.unwrap_or(10) < 10 {
-        total_pages_result = Some(10);
-    }
-
-    let total_pages = ceil(total_pages_result.unwrap_or(10) as f64 / 10 as f64, 0);
-
     Json(json!({
         "status": StatusCode::OK.as_u16(),
         "tenant": tenant,
-        "results": assets_result,
-        "total_pages": total_pages
+        "results": assets_result
     }))
 }

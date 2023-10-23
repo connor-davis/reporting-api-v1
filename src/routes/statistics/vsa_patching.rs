@@ -44,7 +44,7 @@ pub async fn index(
     let vsa_patches_result =
         sqlx::query_as!(
             VsaPatch,
-            "SELECT id, organization_name, total_patches, installed_patches, last_patch, next_patch FROM vsa_agents WHERE LOWER(TRIM(TRAILING ' (Pty) Ltd' FROM organization_name)) = LOWER($1) ORDER BY computer_name;",
+            "SELECT id, organization_name, total_patches, installed_patches, last_patch, next_patch FROM vsa_agents WHERE similarity(LOWER(organization_name), LOWER($1)) >= 0.6 ORDER BY computer_name;",
             tenant
         )
             .fetch_all(&pool)

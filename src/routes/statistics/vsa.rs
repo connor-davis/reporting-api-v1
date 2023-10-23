@@ -15,7 +15,7 @@ pub async fn index(
 
     let vsa_organizations_result =
         sqlx::query!(
-            "SELECT organization_name, anti_virus, os_name FROM vsa_agents WHERE LOWER(TRIM(TRAILING ' (Pty) Ltd' FROM organization_name)) = LOWER($1);",
+            "SELECT organization_name, anti_virus, os_name FROM vsa_agents WHERE similarity(LOWER(organization_name), LOWER($1)) >= 0.6;",
             tenant
         )
             .fetch_all(&pool)

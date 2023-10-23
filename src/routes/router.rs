@@ -30,12 +30,20 @@ pub async fn router() -> Router {
         .route("/", get(index))
         .nest(
             "/tenants",
-            Router::new().route("/", get(tenants::find::all)),
+            Router::new()
+                .route(
+                    "/",
+                    get(tenants::find::all)
+                        .post(tenants::add::add_tenant)
+                        .put(tenants::update::update_tenant)
+                        .delete(tenants::remove::delete_tenant),
+                )
+                .route("/smart", get(tenants::find::smart_find)),
         )
         .nest(
             "/logos",
             Router::new()
-                .route("/", get(logos::find::index))
+                .route("/", get(logos::find::index).delete(logos::remove::index))
                 .route("/view", get(logos::find::get_file))
                 .route("/upload", post(logos::upload::index)),
         )

@@ -1,3 +1,5 @@
+CREATE EXTENSION pg_trgm;
+
 CREATE TABLE IF NOT EXISTS cybercns_agents (
     id TEXT PRIMARY KEY NOT NULL,
     host_name TEXT NOT NULL
@@ -95,4 +97,18 @@ CREATE TABLE IF NOT EXISTS vsa_agents (
     installed_patches DOUBLE PRECISION DEFAULT 0.0,
     last_patch TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     next_patch TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tenants (
+    id SERIAL PRIMARY KEY NOT NULL,
+    tenant_name TEXT NOT NULL,
+    vsa_name TEXT,
+    cyber_cns_name TEXT,
+    rocket_cyber_name TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tenants_external_scan_host_names (
+    id SERIAL PRIMARY KEY NOT NULL,
+    tenant_id SERIAL NOT NULL,
+    host_name TEXT NOT NULL
 );

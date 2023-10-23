@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, Json, extract::Query, body::StreamBody};
+use axum::{body::StreamBody, extract::Query, response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde_json::json;
 use tokio::fs::read_dir;
@@ -15,14 +15,17 @@ pub async fn index(Query(params): Query<Vec<(String, String)>>) -> impl IntoResp
                 let file_name_str = &entry.file_name();
                 let mut file_name = String::from(file_name_str.to_str().unwrap());
 
-                if file_name.contains(tenant) {
+                if file_name.starts_with(tenant)
+                    || file_name.contains(tenant)
+                    || file_name.ends_with(tenant)
+                {
                     file_name = file_name.replace(tenant, "");
                     file_name = file_name.replace(":", "");
 
                     files.push(file_name)
                 }
             }
-        },
+        }
         Err(_) => {}
     }
 
@@ -34,7 +37,7 @@ pub async fn index(Query(params): Query<Vec<(String, String)>>) -> impl IntoResp
 
 pub async fn get_file(Query(params): Query<Vec<(String, String)>>) -> impl IntoResponse {
     let file_name = &params[0].1;
-    
+
     // `File` implements `AsyncRead`
     let file = match tokio::fs::File::open(format!("uploads/{}", file_name)).await {
         Ok(file) => file,

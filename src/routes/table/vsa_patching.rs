@@ -4,7 +4,6 @@ use axum::{
     Json,
 };
 use chrono::{DateTime, Utc};
-use math::round::ceil;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -38,32 +37,16 @@ pub async fn index(
     State(pool): State<PgPool>,
 ) -> impl IntoResponse {
     let tenant = &params[0].1;
-    let offset = (&params[1].1.parse::<i64>().unwrap_or(1) - 1) * 10;
 
     let vsa_patches_result =
         sqlx::query_as!(
             VsaPatch,
-            "SELECT id, organization_name, computer_name, total_patches, installed_patches, last_patch, next_patch FROM vsa_agents WHERE LOWER(TRIM(TRAILING ' (Pty) Ltd' FROM organization_name)) = LOWER($1) ORDER BY computer_name OFFSET $2 LIMIT 10;",
-            tenant,
-            offset
+            "SELECT id, organization_name, computer_name, total_patches, installed_patches, last_patch, next_patch FROM vsa_agents WHERE similarity(LOWER(organization_name), LOWER($1)) >= 0.6 ORDER BY computer_name;",
+            tenant
         )
             .fetch_all(&pool)
             .await
             .expect("Failed to get vsa organization names from postgres.");
-
-    let mut total_pages_result = sqlx::query_scalar!(
-        "SELECT COUNT(*) FROM vsa_agents WHERE LOWER(TRIM(TRAILING ' (Pty) Ltd' FROM organization_name)) = LOWER($1);",
-        tenant
-    )
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to get total results from postgres.");
-
-    if total_pages_result.unwrap_or(10) < 10 {
-        total_pages_result = Some(10);
-    }
-
-    let total_pages = ceil(total_pages_result.unwrap_or(10) as f64 / 10 as f64, 0);
 
     let mut patch_results_array: Vec<VsaPatchResult> = Vec::new();
 
@@ -88,7 +71,6 @@ pub async fn index(
     Json(json!({
         "status": StatusCode::OK.as_u16(),
         "tenant": tenant,
-        "results": patch_results_array,
-        "total_pages": total_pages
+        "results": patch_results_array
     }))
 }

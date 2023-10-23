@@ -21,7 +21,7 @@ pub async fn index(
             SELECT
                 *
             FROM rocketcyber_accounts
-            WHERE LOWER(TRIM(TRAILING ' (Pty) Ltd' FROM account_name)) = LOWER($1)
+            WHERE similarity(LOWER(account_name), LOWER($1)) >= 0.6;
         "#,
         tenant
     )
