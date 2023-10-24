@@ -3,6 +3,8 @@ use std::{str::FromStr, time::Duration};
 use chrono::{FixedOffset, Local};
 use cron::Schedule;
 
+use super::{vsa::sync_vsa, cyber_cns::sync_cybercns, rocket_cyber::sync_rocketcyber};
+
 // This function will run a cronjob every hour.
 pub async fn hour_job() {
     /*
@@ -26,6 +28,9 @@ pub async fn hour_job() {
         if let Some(datetime) = upcoming.next() {
             if datetime.timestamp() <= local.timestamp() {
                 // Cron jobs go here.
+                sync_vsa().await;
+                sync_cybercns().await;
+                sync_rocketcyber().await;
             }
         }
     }
