@@ -1,5 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
+use anyhow::Result;
 use axum::Json;
 use dotenv::dotenv;
 use reqwest::StatusCode;
@@ -18,7 +19,7 @@ use crate::{
     models::vsa::agent::VsaAgent,
 };
 
-pub async fn sync_vsa() {
+pub async fn sync_vsa() -> Result<()> {
     dotenv().ok();
 
     let database_url = std::env::var("DATABASE_URL")
@@ -362,4 +363,6 @@ pub async fn sync_vsa() {
     );
 
     println!("Finished VSA sync.");
+    
+    Ok(())
 }

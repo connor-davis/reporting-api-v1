@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 
 use axum::{extract::DefaultBodyLimit, Router};
 use dotenv::dotenv;
+use tokio_cron_scheduler::{Job, JobScheduler};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -45,11 +46,63 @@ async fn main() {
     println!("Server listening on {}", address);
     println!("Spawning cronjobs.");
 
-    tokio::spawn(fifth_minute_job());
-    tokio::spawn(hour_job());
+    tokio::spawn(cronjobs());
 
     axum::Server::bind(&address)
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+async fn cronjobs() {
+    let scheduler = JobScheduler::new().await;
+
+    match scheduler {
+        Ok(mut scheduler) => {
+            let fifth_minute_job = Job::new(
+                "0     1/5     *      *              *       *            ",
+                |_uuid, _l| {
+                    println!("I run every 5 minutes.");
+
+                    let _ = fifth_minute_job();
+                },
+            );
+
+            match fifth_minute_job {
+                Ok(fifth_minute_job) => {
+                    let _ = scheduler.add(fifth_minute_job).await;
+                }
+                Err(err) => println!("Fifth Minute Job Failed: {:?}", err),
+            }
+
+            let hourly_job = Job::new(
+                "0     0     *      *              *       *            ",
+                |_uuid, _l| {
+                    println!("I run every hour.");
+
+                    let _ = hour_job();
+                },
+            );
+
+            match hourly_job {
+                Ok(hourly_job) => {
+                    let _ = scheduler.add(hourly_job).await;
+                }
+                Err(err) => println!("Hourly Job Failed: {:?}", err),
+            }
+
+            // Add code to be run during/after shutdown
+            scheduler.set_shutdown_handler(Box::new(|| {
+                Box::pin(async move {
+                    println!("Shut down done");
+                })
+            }));
+
+            match scheduler.start().await {
+                Ok(_) => println!("Scheduler started."),
+                Err(err) => println!("Scheduler Failed: {:?}", err),
+            }
+        }
+        Err(err) => println!("Job Scheduler Failed: {:?}", err),
+    }
 }

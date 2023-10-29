@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use anyhow::Result;
 use axum::Json;
 use dotenv::dotenv;
 use reqwest::StatusCode;
@@ -17,7 +18,7 @@ use crate::{
     models::cybercns::{agent::CyberAgent, asset::CyberAsset},
 };
 
-pub async fn sync_cybercns() {
+pub async fn sync_cybercns() -> Result<()> {
     dotenv().ok();
 
     let database_url = std::env::var("DATABASE_URL")
@@ -264,4 +265,6 @@ pub async fn sync_cybercns() {
     );
 
     println!("Finished CyberCNS sync.");
+
+    Ok(())
 }

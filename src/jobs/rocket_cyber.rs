@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use anyhow::Result;
 use axum::Json;
 use dotenv::dotenv;
 use reqwest::StatusCode;
@@ -11,7 +12,7 @@ use crate::{
     models::rocketcyber::{account::RocketAccount, agent::RocketAgent},
 };
 
-pub async fn sync_rocketcyber() {
+pub async fn sync_rocketcyber() -> Result<()> {
     dotenv().ok();
 
     let database_url = std::env::var("DATABASE_URL")
@@ -173,4 +174,6 @@ pub async fn sync_rocketcyber() {
     );
 
     println!("Finished RocketCyber sync.");
+    
+    Ok(())
 }

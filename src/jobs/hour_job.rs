@@ -28,9 +28,11 @@ pub async fn hour_job() {
         if let Some(datetime) = upcoming.next() {
             if datetime.timestamp() <= local.timestamp() {
                 // Cron jobs go here.
-                sync_vsa().await;
-                sync_cybercns().await;
-                sync_rocketcyber().await;
+                let _ = sync_vsa();
+                let _ = sync_cybercns();
+                let _ = sync_rocketcyber();
+
+                continue;
             }
         }
     }
