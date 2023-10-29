@@ -11,7 +11,7 @@ use dotenv::dotenv;
 use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use super::{cybercns, logos, rocketcyber, statistics, table, tenants, vsa};
+use super::{cybercns, logos, reports, rocketcyber, statistics, table, tenants, vsa};
 
 pub async fn router() -> Router {
     dotenv().ok();
@@ -46,6 +46,13 @@ pub async fn router() -> Router {
                 .route("/", get(logos::find::index).delete(logos::remove::index))
                 .route("/view", get(logos::find::get_file))
                 .route("/upload", post(logos::upload::index)),
+        )
+        .nest(
+            "/reports",
+            Router::new()
+                .route("/", get(reports::find::index))
+                .route("/view", get(reports::view::index))
+                .route("/generate", get(reports::generate::index)),
         )
         .nest(
             "/statistics",

@@ -6,3 +6,4 @@ pub mod statistics;
 pub mod table;
 pub mod tenants;
 pub mod vsa;
+pub mod reports;
