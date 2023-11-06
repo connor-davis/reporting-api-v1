@@ -50,7 +50,10 @@ pub async fn router() -> Router {
         .nest(
             "/reports",
             Router::new()
-                .route("/", get(reports::find::index))
+                .route(
+                    "/",
+                    get(reports::find::index).delete(reports::remove::delete_report),
+                )
                 .route("/view", get(reports::view::index))
                 .route("/generate", get(reports::generate::index)),
         )
@@ -98,6 +101,10 @@ pub async fn router() -> Router {
                 .route(
                     "/assets",
                     get(cybercns::assets::index).post(cybercns::assets::import),
+                )
+                .route(
+                    "/vulnerabilities",
+                    get(cybercns::vulnerabilities::index).post(cybercns::vulnerabilities::import),
                 ),
         )
         .nest(

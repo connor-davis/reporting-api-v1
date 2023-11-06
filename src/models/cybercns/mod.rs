@@ -4,3 +4,4 @@ pub mod company;
 pub mod host;
 pub mod security_report_card;
 pub mod security_report_card_evidence;
+pub mod vulnerability;
