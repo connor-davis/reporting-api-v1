@@ -1,9 +1,11 @@
 pub mod cybercns;
 pub mod logos;
+pub mod reports;
 pub mod rocketcyber;
 pub mod router;
+pub mod scans;
+pub mod spanning;
 pub mod statistics;
 pub mod table;
 pub mod tenants;
 pub mod vsa;
-pub mod reports;

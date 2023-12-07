@@ -29,51 +29,68 @@ pub async fn import(State(pool): State<PgPool>) -> impl IntoResponse {
     let mut skipped = 0;
 
     for vulnerability in vulnerabilities {
-        let vulnerability_id = &vulnerability._id;
+        let vulnerability_id = vulnerability._id;
 
-        let existing_vulnerability_result = sqlx::query_as!(
-            CyberVulnerability,
-            "SELECT * FROM cybercns_vulnerabilities WHERE id = $1",
-            vulnerability_id.to_string()
-        )
-        .fetch_one(&pool)
-        .await;
+        if vulnerability_id.is_some() {
+            let vulnerability_id = vulnerability_id.to_owned().unwrap();
 
-        match existing_vulnerability_result {
-            Ok(_) => {
-                skipped += 1;
+            let existing_vulnerability_result = sqlx::query_as!(
+                CyberVulnerability,
+                "SELECT * FROM cybercns_vulnerabilities WHERE id = $1",
+                vulnerability_id.clone().to_string()
+            )
+            .fetch_one(&pool)
+            .await;
+
+            match existing_vulnerability_result {
+                Ok(_) => {
+                    skipped += 1;
+                }
+                Err(_) => {
+                    let score = vulnerability
+                        .score
+                        .unwrap_or_else(|| CyberVulnerabilityScore {
+                            base_score: Some(0.0),
+                            impact_score: Some(0.0),
+                            exploit_score: Some(0.0),
+                            cvss_score: Some(0.0),
+                        });
+
+                    let asset_ref = vulnerability.asset_ref;
+                    let company_ref = vulnerability.company_ref;
+
+                    if asset_ref.is_some() && company_ref.is_some() {
+                        let asset_ref = asset_ref.unwrap();
+                        let company_ref = company_ref.unwrap();
+                        let product = vulnerability.product.unwrap_or(Vec::new());
+
+                        sqlx::query!(
+                            "INSERT INTO cybercns_vulnerabilities (id, title, severity, vector, product, base_score, impact_score, exploit_score, cvss_score, asset_id, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);",
+                            vulnerability_id.clone().to_string(),
+                            vulnerability.title,
+                            vulnerability.severity,
+                            vulnerability.vector,
+                            product.join(", "),
+                            score.base_score,
+                            score.impact_score,
+                            score.exploit_score,
+                            score.cvss_score,
+                            asset_ref.id,
+                            company_ref.id,
+                            company_ref.name
+                        )
+                        .execute(&pool)
+                        .await
+                        .expect("Failed to insert cybercns company into postgres database.");
+
+                        inserted += 1;
+                    } else {
+                        skipped += 1;
+                    }
+                }
             }
-            Err(_) => {
-                let score = vulnerability
-                    .score
-                    .unwrap_or_else(|| CyberVulnerabilityScore {
-                        base_score: Some(0.0),
-                        impact_score: Some(0.0),
-                        exploit_score: Some(0.0),
-                        cvss_score: Some(0.0),
-                    });
-
-                sqlx::query!(
-                    "INSERT INTO cybercns_vulnerabilities (id, title, severity, vector, product, base_score, impact_score, exploit_score, cvss_score, asset_id, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);",
-                    vulnerability._id,
-                    vulnerability.title,
-                    vulnerability.severity,
-                    vulnerability.vector,
-                    vulnerability.product.join(", "),
-                    score.base_score,
-                    score.impact_score,
-                    score.exploit_score,
-                    score.cvss_score,
-                    vulnerability.asset_ref.id,
-                    vulnerability.company_ref.id,
-                    vulnerability.company_ref.name
-                )
-                .execute(&pool)
-                .await
-                .expect("Failed to insert cybercns company into postgres database.");
-
-                inserted += 1;
-            }
+        } else {
+            skipped += 1;
         }
     }
 

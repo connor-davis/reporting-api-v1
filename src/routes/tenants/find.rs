@@ -11,12 +11,23 @@ struct Tenant {
     vsa_name: Option<String>,
     cyber_cns_name: Option<String>,
     rocket_cyber_name: Option<String>,
+    spanning_name: Option<String>,
+    spanning_key: Option<String>,
+    veeam_url: Option<String>,
+    veeam_key: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
 struct TaggedTenant {
     tenant_id: i64,
     tenant_name: String,
+    tenant_vsa_name: Option<String>,
+    tenant_cns_name: Option<String>,
+    tenant_rocket_name: Option<String>,
+    tenant_spanning_name: Option<String>,
+    tenant_spanning_key: Option<String>,
+    tenant_veeam_url: Option<String>,
+    tenant_veeam_key: Option<String>,
     tenant_tags: Vec<String>,
 }
 
@@ -24,6 +35,7 @@ pub async fn all(State(pool): State<PgPool>) -> impl IntoResponse {
     let tenants_result = sqlx::query_as!(Tenant, "SELECT * FROM tenants;")
         .fetch_all(&pool)
         .await;
+
     let mut tagged_tenants: Vec<TaggedTenant> = Vec::new();
 
     match tenants_result {
@@ -43,9 +55,24 @@ pub async fn all(State(pool): State<PgPool>) -> impl IntoResponse {
                     tenant_tags.push("rocketcyber".to_string())
                 }
 
+                if tenant.spanning_key.is_some() && tenant.spanning_name.is_some() {
+                    tenant_tags.push("spanning".to_string())
+                }
+
+                if tenant.veeam_url.is_some() && tenant.veeam_key.is_some() {
+                    tenant_tags.push("veeam".to_string())
+                }
+
                 tagged_tenants.push(TaggedTenant {
                     tenant_id: tenant.id,
                     tenant_name: tenant.tenant_name,
+                    tenant_vsa_name: tenant.vsa_name,
+                    tenant_cns_name: tenant.cyber_cns_name,
+                    tenant_rocket_name: tenant.rocket_cyber_name,
+                    tenant_spanning_name: tenant.spanning_name,
+                    tenant_spanning_key: tenant.spanning_key,
+                    tenant_veeam_url: tenant.veeam_url,
+                    tenant_veeam_key: tenant.veeam_key,
                     tenant_tags,
                 })
             }

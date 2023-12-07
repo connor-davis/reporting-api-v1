@@ -11,7 +11,9 @@ use dotenv::dotenv;
 use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use super::{cybercns, logos, reports, rocketcyber, statistics, table, tenants, vsa};
+use super::{
+    cybercns, logos, reports, rocketcyber, scans, spanning, statistics, table, tenants, vsa,
+};
 
 pub async fn router() -> Router {
     dotenv().ok();
@@ -38,7 +40,17 @@ pub async fn router() -> Router {
                         .put(tenants::update::update_tenant)
                         .delete(tenants::remove::delete_tenant),
                 )
-                .route("/smart", get(tenants::find::smart_find)),
+                .route("/smart", get(tenants::find::smart_find))
+                .route(
+                    "/external-scan-hostname",
+                    get(tenants::external_scan_hostname::find::index)
+                        .post(
+                            tenants::external_scan_hostname::add::add_tenant_external_scan_hostname,
+                        )
+                        .delete(
+                            tenants::external_scan_hostname::remove::remove_external_scan_hostname,
+                        ),
+                ),
         )
         .nest(
             "/logos",
@@ -58,6 +70,12 @@ pub async fn router() -> Router {
                 .route("/generate", get(reports::generate::index)),
         )
         .nest(
+            "/scans",
+            Router::new()
+                .route("/", get(scans::find::index))
+                .route("/view", get(scans::view::index)),
+        )
+        .nest(
             "/statistics",
             Router::new()
                 .route("/vsa", get(statistics::vsa::index))
@@ -70,7 +88,16 @@ pub async fn router() -> Router {
                 .route("/vsa", get(table::vsa::index))
                 .route("/vsa/patching", get(table::vsa_patching::index))
                 .route("/cns", get(table::cns_assets::index))
-                .route("/rocket-cyber", get(table::rocket_cyber::index)),
+                .route(
+                    "/cns-vulnerabilities",
+                    get(table::cns_vulnerabilities::index),
+                )
+                .route("/rocket-cyber", get(table::rocket_cyber::index))
+                .route(
+                    "/rocket-cyber-agents",
+                    get(table::rocket_cyber_agents::index),
+                )
+                .route("/spanning-backups", get(table::spanning_backups::index)),
         )
         .nest(
             "/vsa",
@@ -122,6 +149,13 @@ pub async fn router() -> Router {
                     "/incidents",
                     get(rocketcyber::incidents::index).post(rocketcyber::incidents::import),
                 ),
+        )
+        .nest(
+            "/spanning",
+            Router::new().route(
+                "/backups",
+                get(spanning::spanning_backups::index).post(spanning::spanning_backups::import),
+            ),
         )
         .fallback(fallback)
         .with_state(pool)

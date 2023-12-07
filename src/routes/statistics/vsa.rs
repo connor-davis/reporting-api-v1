@@ -6,6 +6,7 @@ use axum::{
 use reqwest::StatusCode;
 use serde_json::json;
 use sqlx::PgPool;
+use utoipa::openapi::server;
 
 pub async fn index(
     Query(params): Query<Vec<(String, String)>>,
@@ -27,6 +28,7 @@ pub async fn index(
     let mut win11_agents_count = 0;
     let mut win10_agents_count = 0;
     let mut win7_agents_count = 0;
+    let mut server_agents_count = 0;
 
     for record in vsa_organizations_result {
         let anti_virus = record.anti_virus.unwrap_or(false);
@@ -66,6 +68,18 @@ pub async fn index(
         if os_name.contains("22000") || os_name.contains("22621") {
             win11_agents_count += 1;
         }
+
+        // Check if os_name is an os name for a server os
+        if os_name.to_lowercase().contains("server")
+            || os_name.to_lowercase().contains("ubuntu")
+            || os_name.to_lowercase().contains("debian")
+            || os_name.to_lowercase().contains("red hat")
+            || os_name.to_lowercase().contains("centos")
+            || os_name.to_lowercase().contains("suse")
+            || os_name.to_lowercase().contains("oracle")
+        {
+            server_agents_count += 1;
+        }
     }
 
     Json(json!({
@@ -75,6 +89,7 @@ pub async fn index(
         "agents_with_anti_virus": agents_with_av_count,
         "win11_agents": win11_agents_count,
         "win10_agents": win10_agents_count,
-        "win7_agents": win7_agents_count
+        "win7_agents": win7_agents_count,
+        "server_agents": server_agents_count
     }))
 }

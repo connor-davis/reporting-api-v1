@@ -11,7 +11,11 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
     documentation::openapi::ApiDoc,
-    jobs::{fifth_minute_job::fifth_minute_job, hour_job::hour_job},
+    functions::cybercns::external_scan::start_external_scan,
+    jobs::{
+        cyber_cns::sync_cybercns, rocket_cyber::sync_rocketcyber, spanning::sync_spanning,
+        veeam::sync_veeam, vsa::sync_vsa,
+    },
     routes::router::router,
 };
 
@@ -46,7 +50,14 @@ async fn main() {
     println!("Server listening on {}", address);
     println!("Spawning cronjobs.");
 
+    tokio::spawn(start_external_scan());
+
     tokio::spawn(cronjobs());
+    tokio::spawn(sync_vsa());
+    tokio::spawn(sync_cybercns());
+    tokio::spawn(sync_rocketcyber());
+    tokio::spawn(sync_spanning());
+    tokio::spawn(sync_veeam());
 
     axum::Server::bind(&address)
         .serve(app.into_make_service())
@@ -62,9 +73,7 @@ async fn cronjobs() {
             let fifth_minute_job = Job::new(
                 "0     1/5     *      *              *       *            ",
                 |_uuid, _l| {
-                    println!("I run every 5 minutes.");
-
-                    let _ = fifth_minute_job();
+                    println!("Running 5th minute cronjobs.");
                 },
             );
 
@@ -78,9 +87,13 @@ async fn cronjobs() {
             let hourly_job = Job::new(
                 "0     0     *      *              *       *            ",
                 |_uuid, _l| {
-                    println!("I run every hour.");
+                    println!("Running hourly cronjobs.");
 
-                    let _ = hour_job();
+                    tokio::spawn(sync_vsa());
+                    tokio::spawn(sync_cybercns());
+                    tokio::spawn(sync_rocketcyber());
+                    tokio::spawn(sync_spanning());
+                    tokio::spawn(sync_veeam());
                 },
             );
 
@@ -89,6 +102,19 @@ async fn cronjobs() {
                     let _ = scheduler.add(hourly_job).await;
                 }
                 Err(err) => println!("Hourly Job Failed: {:?}", err),
+            }
+
+            let daily_job = Job::new("0 0 4 * * * *", |_uuid, _l| {
+                println!("Running daily cronjobs.");
+
+                tokio::spawn(start_external_scan());
+            });
+
+            match daily_job {
+                Ok(daily_job) => {
+                    let _ = scheduler.add(daily_job).await;
+                }
+                Err(err) => println!("Daily Job Failed: {:?}", err),
             }
 
             // Add code to be run during/after shutdown

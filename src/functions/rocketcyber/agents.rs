@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use dotenv::dotenv;
 use reqwest::{Client, Error};
 use serde::{Deserialize, Serialize};
@@ -8,6 +9,11 @@ pub struct RocketAgent {
     pub id: Option<String>,
     pub customer_id: Option<i64>,
     pub hostname: Option<String>,
+    pub platform: Option<String>,
+    pub family: Option<String>,
+    pub version: Option<String>,
+    pub architecture: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub account_path: Option<String>,
     pub agent_version: Option<String>,
 }

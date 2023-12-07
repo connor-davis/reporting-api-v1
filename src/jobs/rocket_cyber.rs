@@ -96,6 +96,17 @@ pub async fn sync_rocketcyber() -> Result<()> {
         .fetch_one(&pool)
         .await;
 
+        let mut operating_system = Some(agent.platform.unwrap_or("".to_string()));
+
+        operating_system =
+            Some(operating_system.unwrap() + " " + agent.family.unwrap_or("".to_string()).as_str());
+
+        operating_system =
+            Some(operating_system.unwrap() + " " + agent.version.unwrap_or("".to_string()).as_str());
+
+        operating_system =
+            Some(operating_system.unwrap() + " " + agent.architecture.unwrap_or("".to_string()).as_str());
+
         match existing_agent_result {
             Ok(_) => {
                 skipped += 1;
@@ -103,10 +114,12 @@ pub async fn sync_rocketcyber() -> Result<()> {
             Err(_) => {
                 sqlx::query_as!(
                     RocketAgent,
-                    "INSERT INTO rocketcyber_agents VALUES ($1,$2,$3,$4,$5);",
+                    "INSERT INTO rocketcyber_agents (id, customer_id, hostname, operating_system, created_at, account_path, agent_version) VALUES ($1,$2,$3,$4,$5,$6,$7);",
                     agent_id,
                     agent.customer_id.unwrap(),
                     agent.hostname.unwrap(),
+                    operating_system.unwrap(),
+                    agent.created_at.unwrap(),
                     agent.account_path.unwrap(),
                     agent.agent_version.unwrap()
                 )
@@ -174,6 +187,6 @@ pub async fn sync_rocketcyber() -> Result<()> {
     );
 
     println!("Finished RocketCyber sync.");
-    
+
     Ok(())
 }

@@ -363,6 +363,6 @@ pub async fn sync_vsa() -> Result<()> {
     );
 
     println!("Finished VSA sync.");
-    
+
     Ok(())
 }
