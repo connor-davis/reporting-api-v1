@@ -58,7 +58,7 @@ async fn main() {
     tokio::spawn(sync_rocketcyber());
     tokio::spawn(sync_spanning());
     tokio::spawn(sync_veeam());
-
+    
     axum::Server::bind(&address)
         .serve(app.into_make_service())
         .await

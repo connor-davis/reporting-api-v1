@@ -6,7 +6,6 @@ use axum::{
 use reqwest::StatusCode;
 use serde_json::json;
 use sqlx::PgPool;
-use utoipa::openapi::server;
 
 pub async fn index(
     Query(params): Query<Vec<(String, String)>>,
@@ -42,7 +41,9 @@ pub async fn index(
 
         // Write a check to see if os_name is windows 11/10/7 else nothing
         if os_name.contains("7601") {
-            win7_agents_count += 1;
+            if !os_name.to_lowercase().contains("server") {
+                win7_agents_count += 1;
+            }
         }
 
         // Check if os_name contains any of the windows 10 build numbers
@@ -61,12 +62,16 @@ pub async fn index(
             || os_name.contains("19044")
             || os_name.contains("19045")
         {
-            win10_agents_count += 1;
+            if !os_name.to_lowercase().contains("server") {
+                win10_agents_count += 1;
+            }
         }
 
         // Check if os_name contains any of the windows 11 build numbers
-        if os_name.contains("22000") || os_name.contains("22621") {
-            win11_agents_count += 1;
+        if os_name.contains("22000") || os_name.contains("22621") || os_name.contains("22631") {
+            if !os_name.to_lowercase().contains("server") {
+                win11_agents_count += 1;
+            }
         }
 
         // Check if os_name is an os name for a server os
